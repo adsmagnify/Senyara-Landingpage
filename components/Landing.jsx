@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Booking } from "./Booking.jsx";
 import {
@@ -11,7 +13,7 @@ import {
   STEPS,
   STRATEGIES,
   WA_GENERAL,
-} from "./content.js";
+} from "../lib/content.js";
 
 function Check() {
   return (

@@ -1,6 +1,8 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { AGES, AREAS, PATHS, QUESTIONS, STARTS, buildInsight } from "./content.js";
+import { useRouter } from "next/navigation";
+import { AGES, AREAS, PATHS, QUESTIONS, STARTS, buildInsight } from "../lib/content.js";
 
 const emptyForm = {
   name: "",
@@ -26,7 +28,7 @@ export function Booking() {
   const [slotId, setSlotId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [slotsNonce, setSlotsNonce] = useState(0);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const insight = buildInsight(picks);
   const question = QUESTIONS[step];
@@ -184,7 +186,7 @@ export function Booking() {
         }
         throw new Error(data.error || "We couldn’t save that booking.");
       }
-      navigate(`/thank-you/${data.booking.id}`, { state: { booking: data.booking } });
+      router.push(`/thank-you/${data.booking.id}`);
     } catch (error) {
       setFormError(error.message);
     } finally {

@@ -1,16 +1,14 @@
 {
   "name": "senyara",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "scripts": {
-    "dev": "concurrently -n web,api -c green,yellow \"npm run dev -w senyara-web\" \"npm run dev -w senyara-api\"",
-    "build": "npm run build -w senyara-web",
-    "start": "npm run build && npm start -w senyara-api"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
-  "devDependencies": {
-    "concurrently": "^9.2.1"
+  "dependencies": {
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   }
 }

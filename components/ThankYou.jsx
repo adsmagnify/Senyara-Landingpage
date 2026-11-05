@@ -1,6 +1,9 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
-import { waLink } from "./content.js";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { waLink } from "../lib/content.js";
 
 const NEXT = [
   { n: "1", t: "We read what you shared", d: "Your Learning Specialist looks at your answers before the call, so the time is spent on your child." },
@@ -9,12 +12,11 @@ const NEXT = [
 ];
 
 export function ThankYou() {
-  const { id } = useParams();
-  const location = useLocation();
-  const seeded = location.state?.booking?.id === id ? location.state.booking : null;
-  const [booking, setBooking] = useState(seeded);
+  const params = useParams();
+  const id = params.id;
+  const [booking, setBooking] = useState(null);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(!seeded);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const previous = document.title;
@@ -25,7 +27,6 @@ export function ThankYou() {
   }, []);
 
   useEffect(() => {
-    if (seeded) return undefined;
     let cancel = false;
     setLoading(true);
     setError("");
@@ -44,7 +45,7 @@ export function ThankYou() {
     return () => {
       cancel = true;
     };
-  }, [id, seeded]);
+  }, [id]);
 
   const priority = booking?.start === "As soon as possible" || booking?.start === "Within the next month";
   const confirmHref = booking
@@ -60,10 +61,10 @@ export function ThankYou() {
       </div>
       <header className="site-header">
         <div className="wrap header-row">
-          <Link to="/" className="logo-link">
+          <Link href="/" className="logo-link">
             <img src="/logo.png" alt="Senyara Learning, where every child is seen" />
           </Link>
-          <Link className="btn btn-gold" to="/">
+          <Link className="btn btn-gold" href="/">
             Back to Senyara
           </Link>
         </div>
@@ -78,7 +79,7 @@ export function ThankYou() {
               <p className="form-error" role="alert">
                 {error}
               </p>
-              <Link className="btn btn-green btn-cta" to="/#book">
+              <Link className="btn btn-green btn-cta" href="/#book">
                 Book a session
               </Link>
             </div>
@@ -121,7 +122,7 @@ export function ThankYou() {
                 <a className="btn btn-green btn-cta" href={confirmHref} target="_blank" rel="noreferrer">
                   Send a WhatsApp confirmation
                 </a>
-                <Link className="text-btn" to="/#book">
+                <Link className="text-btn" href="/#book">
                   Book for another child
                 </Link>
               </div>
