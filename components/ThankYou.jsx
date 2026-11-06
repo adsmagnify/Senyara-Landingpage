@@ -61,10 +61,11 @@ export function ThankYou() {
       </div>
       <header className="site-header">
         <div className="wrap header-row">
-          <Link href="/" className="logo-link">
-            <img src="/logo.png" alt="Senyara Learning, where every child is seen" />
+          <Link href="/" className="brand-lockup">
+            <img src="/logo-stack.jpg" alt="" />
+            <span>Senyara<br />Learning</span>
           </Link>
-          <Link className="btn btn-gold" href="/">
+          <Link className="btn btn-green" href="/">
             Back to Senyara
           </Link>
         </div>

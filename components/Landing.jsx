@@ -12,7 +12,6 @@ import {
   STANDARDS,
   STEPS,
   STRATEGIES,
-  WA_GENERAL,
 } from "../lib/content.js";
 
 function Check() {
@@ -39,8 +38,9 @@ function Header() {
       </div>
       <header className="site-header">
         <div className="wrap header-row">
-          <a href="#top" className="logo-link">
-            <img src="/logo.png" alt="Senyara Learning, where every child is seen" />
+          <a href="#top" className="brand-lockup">
+            <img src="/logo-stack.jpg" alt="" />
+            <span>Senyara<br />Learning</span>
           </a>
           <nav className="nav hide-sm" aria-label="Page">
             <a href="#offer">What you leave with</a>
@@ -48,10 +48,7 @@ function Header() {
             <a href="#faq">Questions</a>
           </nav>
           <div className="header-actions">
-            <a className="btn btn-line" href={WA_GENERAL} target="_blank" rel="noreferrer">
-              WhatsApp
-            </a>
-            <a className="btn btn-gold hide-sm" href="#book">
+            <a className="btn btn-green hide-sm" href="#book">
               Book free session
             </a>
           </div>
@@ -103,7 +100,7 @@ function Hero() {
           )}
         </div>
         <div className="cta-block">
-          <a className="btn btn-green btn-cta" href="#book">
+          <a className="btn btn-gold btn-cta" href="#book">
             Book my Free Online Clarity Session →
           </a>
           <span>2 quick steps: 5 questions about your child, then pick a time</span>
@@ -226,11 +223,13 @@ export default function App() {
           </div>
         </section>
 
-        <section className="band band-plain">
+        <section className="band band-green">
           <div className="wrap section">
             <p className="eyebrow center">A look inside</p>
             <h2 className="display center">
-              Not a homework plan. <em>A picture of how your child learns.</em>
+              Not a homework plan.
+              <br />
+              <em>A picture of how your child learns.</em>
             </h2>
             <p className="lede-sm center">
               Tutoring looks at the next topic. A Senyara Learning Specialist looks at the whole learner: how they approach learning, understand and retain information, work through tasks, and build confidence and independence.
