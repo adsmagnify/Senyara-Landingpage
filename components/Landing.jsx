@@ -356,7 +356,7 @@ export default function App() {
                 A Senyara <em>Learning Specialist</em>
               </h2>
               <p>A trained specialist who looks at how your child learns, not just what they’re studying.</p>
-              <p className="founder">Senyara was started by a parent whose own child was pulled out of class for support.</p>
+              <p className="founder">Senyara was founded by a parent who experienced first-hand what it means to search for the right learning support for her own child.</p>
               <div className="photo-row">
                 <figure className="photo">
                   <img src="/hero.jpg" alt="A parent and child working together at a table" />
@@ -428,9 +428,6 @@ export default function App() {
       </footer>
 
       <div className="sticky-bar">
-        <a className="btn btn-line" href={WA_GENERAL} target="_blank" rel="noreferrer">
-          WhatsApp
-        </a>
         <a className="btn btn-green btn-cta" href="#book">
           Book free session
         </a>

@@ -782,14 +782,18 @@ h1 {
     right: 0;
     bottom: 0;
     z-index: 30;
-    gap: 10px;
-    padding: 12px 16px;
+    padding: 8px 16px;
     background: var(--white);
     border-top: 1px solid var(--line);
   }
-  .sticky-bar .btn { flex: 1; }
-  .sticky-bar .btn-line { color: var(--green); border-color: var(--green); }
-  .page { padding-bottom: 84px; }
+  .sticky-bar .btn {
+    flex: 1;
+    min-height: 44px;
+    padding: 8px 16px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+  .page { padding-bottom: 68px; }
 }
 @media (max-width: 520px) {
   .cards.four, .foot { grid-template-columns: 1fr; }
