@@ -1,3 +1,9 @@
 node_modules/
 .next/
 data/bookings.json
+data/*.xlsx
+data/~$*
+data/excel-token.json
+.env
+.env.local
+.env*.local

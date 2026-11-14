@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Booking } from "./Booking.jsx";
 import {
   FAQS,
@@ -59,7 +59,16 @@ function Header() {
 }
 
 function Hero() {
-  const [open, setOpen] = useState(false);
+  const videoRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
+
+  const play = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setPlaying(true);
+    video.play().catch(() => setPlaying(false));
+  };
+
   return (
     <section className="hero">
       <div className="hero-inner">
@@ -71,33 +80,27 @@ function Hero() {
         <p className="hero-copy">
           Homework battles, effort that isn’t showing, confidence slipping. Watch this 2-minute message, then book a free online session to find out what’s really going on.
         </p>
-        <div className="video">
-          <span className="badge gold">Watch first · 2 min</span>
-          <span className="badge ghost">Captions on</span>
-          {open ? (
-            <div className="video-copy">
-              <p className="video-kicker">The message</p>
-              <p className="video-quote">“Sometimes your child doesn’t need you to do more. They need you to understand them better.”</p>
-              <p>
-                Tutoring looks at the next topic. A Senyara Learning Specialist looks at how your child approaches learning, holds on to it, and builds confidence.
-              </p>
-              <div className="video-actions">
-                <a className="btn btn-gold" href="#book">
-                  Book my free session
-                </a>
-                <button type="button" className="text-btn light" onClick={() => setOpen(false)}>
-                  Close
+        <div className="video-shell">
+          <div className={`video${playing ? " is-playing" : ""}`}>
+            <video
+              ref={videoRef}
+              className="vsl"
+              src="/Senyara-VSL-16x9-preview-720p....mp4"
+              poster="/hero.jpg"
+              controls={playing}
+              playsInline
+              preload="metadata"
+              onPlay={() => setPlaying(true)}
+            />
+            {!playing && (
+              <>
+                <span className="badge gold">Watch first · 2 min</span>
+                <button type="button" className="play" aria-label="Play the message" onClick={play}>
+                  <PlayIcon />
                 </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <button type="button" className="play" aria-label="Play the message" onClick={() => setOpen(true)}>
-                <PlayIcon />
-              </button>
-              <p className="video-quote">“Sometimes your child doesn’t need you to do more. They need you to understand them better.”</p>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
         <div className="cta-block">
           <a className="btn btn-gold btn-cta" href="#book">

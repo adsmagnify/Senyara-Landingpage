@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { BookingError, createBooking } from "../../../lib/bookings.js";
+import { notifyOffice } from "../../../lib/mail.js";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export async function POST(request) {
   }
   try {
     const booking = await createBooking(body);
+    await notifyOffice(booking);
     return NextResponse.json({ booking }, { status: 201 });
   } catch (error) {
     const status = error instanceof BookingError ? error.status : 500;

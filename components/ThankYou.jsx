@@ -8,7 +8,7 @@ import { waLink } from "../lib/content.js";
 const NEXT = [
   { n: "1", t: "We read what you shared", d: "Your Learning Specialist looks at your answers before the call, so the time is spent on your child." },
   { n: "2", t: "We confirm on WhatsApp", d: "You’ll get a message on the number you gave us, with the time and how to join." },
-  { n: "3", t: "You join online", d: "A quiet spot, and a phone, tablet, or laptop, is all you need. The session is 45 minutes." },
+  { n: "3", t: "You join online", d: "A quiet spot, and a phone, tablet, or laptop, is all you need. The session is 30 minutes." },
 ];
 
 export function ThankYou() {

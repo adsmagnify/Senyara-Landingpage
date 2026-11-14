@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AGES, AREAS, PATHS, QUESTIONS, STARTS, buildInsight } from "../lib/content.js";
+
+const CALENDLY_URL = "https://calendly.com/learn-senyaralearning/30min";
 
 const emptyForm = {
   name: "",
@@ -21,18 +23,14 @@ export function Booking() {
   const [skipped, setSkipped] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
-  const [days, setDays] = useState([]);
-  const [slotsError, setSlotsError] = useState("");
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  const [day, setDay] = useState("");
-  const [slotId, setSlotId] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [slotsNonce, setSlotsNonce] = useState(0);
+  const detailsRef = useRef(form);
+  const savingRef = useRef(false);
   const router = useRouter();
+  detailsRef.current = { form, path, skipped, picks };
 
   const insight = buildInsight(picks);
   const question = QUESTIONS[step];
-  const selectedDay = days.find((item) => item.date === day);
   const priority = form.start === "As soon as possible" || form.start === "Within the next month";
   const progress = Math.round((step / QUESTIONS.length) * 100);
 
@@ -47,36 +45,93 @@ export function Booking() {
 
   useEffect(() => {
     if (stage !== "time") return undefined;
-    let cancel = false;
-    setSlotsLoading(true);
-    setSlotsError("");
-    fetch("/api/slots")
-      .then((response) => {
-        if (!response.ok) throw new Error("Could not load times");
-        return response.json();
-      })
-      .then((data) => {
-        if (cancel) return;
-        const nextDays = data.days || [];
-        setDays(nextDays);
-        setDay((current) => {
-          if (current && nextDays.some((item) => item.date === current)) return current;
-          const open = nextDays.find((item) => item.times.some((time) => time.available));
-          return (open || nextDays[0])?.date || "";
-        });
-      })
-      .catch(() => {
-        if (!cancel) {
-          setSlotsError("We couldn’t load times just now. Message us on WhatsApp and we’ll find a time with you.");
-        }
-      })
-      .finally(() => {
-        if (!cancel) setSlotsLoading(false);
+    const parent = document.getElementById("calendly-embed");
+    if (!parent) return undefined;
+
+    function mount() {
+      if (!window.Calendly || !parent.isConnected) return;
+      parent.innerHTML = "";
+      const current = detailsRef.current.form;
+      window.Calendly.initInlineWidget({
+        url: CALENDLY_URL,
+        parentElement: parent,
+        prefill: {
+          name: current.name,
+          customAnswers: {
+            a1: current.phone,
+            a2: `Child ${current.age}, ${current.area}. Start: ${current.start}`,
+          },
+        },
       });
+    }
+
+    const existing = document.querySelector("script[data-calendly]");
+    if (window.Calendly) mount();
+    else if (!existing) {
+      const script = document.createElement("script");
+      script.src = "https://assets.calendly.com/assets/external/widget.js";
+      script.async = true;
+      script.dataset.calendly = "true";
+      script.onload = mount;
+      document.body.appendChild(script);
+    } else {
+      existing.addEventListener("load", mount);
+    }
+
+    async function onScheduled(event) {
+      if (event.origin !== "https://calendly.com") return;
+      if (event.data?.event !== "calendly.event_scheduled") return;
+      if (savingRef.current) return;
+      savingRef.current = true;
+      setSubmitting(true);
+      setFormError("");
+      const current = detailsRef.current;
+      const answers = buildInsight(current.picks);
+      const payload = event.data?.payload || {};
+      const scheduled = payload.event;
+      const calendlyEvent = typeof scheduled === "string" ? scheduled : scheduled?.uri || "";
+      const calendlyStart =
+        (scheduled && typeof scheduled === "object" && (scheduled.start_time || scheduled.startTime)) ||
+        payload.start_time ||
+        "";
+      try {
+        const response = await fetch("/api/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: current.form.name,
+            phone: current.form.phone,
+            age: current.form.age,
+            area: current.form.area,
+            start: current.form.start,
+            consent: current.form.consent,
+            path: current.path,
+            skipped: current.skipped,
+            picks: current.picks.map((pick) => ({ question: pick.question, answer: pick.label })),
+            summary: answers.summaryLine,
+            mirror: answers.mirror,
+            resultKey: answers.result.key,
+            slotId: "calendly",
+            calendlyEvent,
+            calendlyStart,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "We couldn’t save that booking.");
+        router.push(`/thank-you/${data.booking.id}`);
+      } catch (error) {
+        savingRef.current = false;
+        setSubmitting(false);
+        setFormError(error.message);
+      }
+    }
+
+    window.addEventListener("message", onScheduled);
     return () => {
-      cancel = true;
+      window.removeEventListener("message", onScheduled);
+      if (existing) existing.removeEventListener("load", mount);
     };
-  }, [stage, slotsNonce]);
+  }, [stage, router]);
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -148,50 +203,6 @@ export function Booking() {
     }
     setFormError("");
     setStage("time");
-  }
-
-  async function confirm(event) {
-    event.preventDefault();
-    if (!slotId) {
-      setFormError("Please pick a time.");
-      return;
-    }
-    setSubmitting(true);
-    setFormError("");
-    try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          phone: form.phone,
-          age: form.age,
-          area: form.area,
-          start: form.start,
-          consent: form.consent,
-          path,
-          skipped,
-          picks: picks.map((pick) => ({ question: pick.question, answer: pick.label })),
-          summary: insight.summaryLine,
-          mirror: insight.mirror,
-          resultKey: insight.result.key,
-          slotId,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        if (response.status === 409) {
-          setSlotId("");
-          setSlotsNonce((value) => value + 1);
-        }
-        throw new Error(data.error || "We couldn’t save that booking.");
-      }
-      router.push(`/thank-you/${data.booking.id}`);
-    } catch (error) {
-      setFormError(error.message);
-    } finally {
-      setSubmitting(false);
-    }
   }
 
   return (
@@ -370,7 +381,7 @@ export function Booking() {
           )}
 
           {stage === "time" && (
-            <form className="stack" onSubmit={confirm}>
+            <div className="stack">
               {priority && (
                 <div className="priority">
                   <strong>Priority family:</strong> you’d like to start soon, so we’ll keep an eye on your booking and reach out today.
@@ -381,64 +392,19 @@ export function Booking() {
                 {skipped
                   ? "You can share more about your child during the session."
                   : "Your answers are attached, so your specialist will be ready."}{" "}
-                Each session is 45 minutes, Gulf Standard Time.
+                Choose a 30-minute time below.
               </p>
-
-              {slotsLoading && <div className="slot-skeleton" aria-hidden="true" />}
-              {slotsError && (
-                <p className="form-error" role="alert">
-                  {slotsError}
-                </p>
-              )}
-
-              {days.length > 0 && (
-                <>
-                  <div className="days" role="listbox" aria-label="Days">
-                    {days.map((item) => (
-                      <button
-                        key={item.date}
-                        type="button"
-                        className={item.date === day ? "day-chip is-on" : "day-chip"}
-                        aria-pressed={item.date === day}
-                        onClick={() => {
-                          setDay(item.date);
-                          setSlotId("");
-                        }}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="times">
-                    {(selectedDay?.times || []).map((time) => (
-                      <button
-                        key={time.id}
-                        type="button"
-                        className={slotId === time.id ? "time-btn is-on" : "time-btn"}
-                        disabled={!time.available}
-                        aria-pressed={slotId === time.id}
-                        onClick={() => setSlotId(time.id)}
-                      >
-                        {time.label}
-                        <span>{time.available ? "45 min" : "Taken"}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
+              <div id="calendly-embed" className="calendly-embed" />
+              {submitting && <p className="quiet">Saving your booking…</p>}
               {formError && (
                 <p className="form-error" role="alert">
                   {formError}
                 </p>
               )}
-              <button type="submit" className="btn btn-green btn-cta" disabled={submitting || !slotId}>
-                {submitting ? "Booking…" : "Confirm this time →"}
-              </button>
               <button type="button" className="text-btn back" onClick={() => setStage("details")}>
                 ← Edit my details
               </button>
-            </form>
+            </div>
           )}
         </div>
       </div>
