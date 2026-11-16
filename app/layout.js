@@ -1,18 +1,27 @@
-import { Inter, Playfair_Display } from "next/font/google";
+import localFont from "next/font/local";
 import Script from "next/script";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+const inter = localFont({
+  src: [
+    { path: "../fonts/inter-latin-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/inter-latin-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/inter-latin-600.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/inter-latin-700.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-sans",
+  display: "swap",
 });
 
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  style: ["normal", "italic"],
+const playfair = localFont({
+  src: [
+    { path: "../fonts/playfair-display-latin-600.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/playfair-display-latin-700.woff2", weight: "700", style: "normal" },
+    { path: "../fonts/playfair-display-latin-600-italic.woff2", weight: "600", style: "italic" },
+    { path: "../fonts/playfair-display-latin-700-italic.woff2", weight: "700", style: "italic" },
+  ],
   variable: "--font-serif",
+  display: "swap",
 });
 
 export const metadata = {
