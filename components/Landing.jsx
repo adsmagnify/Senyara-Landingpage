@@ -74,8 +74,8 @@ function Hero() {
       <div className="hero-inner">
         <p className="pill">Free Online Clarity Session · For parents across the UAE</p>
         <h1>
-          Your child is putting in the effort.
-          <span>So what’s still getting in the way?</span>
+          <span className="line">Your child is putting in the effort.</span>
+          <span className="line">So what’s still getting in the way?</span>
         </h1>
         <p className="hero-copy">
           Homework battles, effort that isn’t showing, confidence slipping. Watch this 2-minute message, then book a free online session to find out what’s really going on.
@@ -107,13 +107,13 @@ function Hero() {
             Book my Free Online Clarity Session →
           </a>
           <span>2 quick steps: 5 questions about your child, then pick a time</span>
-        </div>
-        <div className="chips">
-          {STACK.map((item) => (
-            <span key={item.t} className="chip">
-              <Check /> {item.t}
-            </span>
-          ))}
+          <div className="chips">
+            {STACK.map((item) => (
+              <span key={item.t} className="chip">
+                <Check /> {item.t}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </section>
