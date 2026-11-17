@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AGES, AREAS, PATHS, QUESTIONS, STARTS, buildInsight } from "../lib/content.js";
-
-const CALENDLY_URL = "https://calendly.com/learn-senyaralearning/30min";
 
 const emptyForm = {
   name: "",
@@ -32,83 +30,14 @@ export function Booking() {
 
   const insight = buildInsight(picks);
   const question = QUESTIONS[step];
-  const priority = form.start === "As soon as possible" || form.start === "Within the next month";
   const progress = Math.round((step / QUESTIONS.length) * 100);
 
   const live =
-    stage === "time"
-      ? "Pick a time for your session."
-      : stage === "details"
-        ? "Add your details so your specialist can prepare."
-        : path
-          ? `Question ${step + 1} of ${QUESTIONS.length}. ${question?.text || ""}`
-          : "Choose which sounds more like your child.";
-
-  useEffect(() => {
-    if (stage !== "time") return undefined;
-    const parent = document.getElementById("calendly-embed");
-    if (!parent) return undefined;
-
-    function mount() {
-      if (!window.Calendly || !parent.isConnected) return;
-      parent.innerHTML = "";
-      const current = detailsRef.current.form;
-      window.Calendly.initInlineWidget({
-        url: CALENDLY_URL,
-        parentElement: parent,
-        prefill: {
-          name: current.name,
-          customAnswers: {
-            a1: current.phone,
-            a2: `Child ${current.age}, ${current.area}. Start: ${current.start}`,
-          },
-        },
-      });
-    }
-
-    const existing = document.querySelector("script[data-calendly]");
-    if (window.Calendly) mount();
-    else if (!existing) {
-      const script = document.createElement("script");
-      script.src = "https://assets.calendly.com/assets/external/widget.js";
-      script.async = true;
-      script.dataset.calendly = "true";
-      script.onload = mount;
-      document.body.appendChild(script);
-    } else {
-      existing.addEventListener("load", mount);
-    }
-
-    async function onScheduled(event) {
-      if (event.origin !== "https://calendly.com") return;
-      if (event.data?.event !== "calendly.event_scheduled") return;
-      if (savingRef.current) return;
-      savingRef.current = true;
-      setSubmitting(true);
-      setFormError("");
-      const payload = event.data?.payload || {};
-      const scheduled = payload.event;
-      const calendlyEvent = typeof scheduled === "string" ? scheduled : scheduled?.uri || "";
-      const calendlyStart =
-        (scheduled && typeof scheduled === "object" && (scheduled.start_time || scheduled.startTime)) ||
-        payload.start_time ||
-        "";
-      try {
-        const data = await persistLead({ slotId: "calendly", calendlyEvent, calendlyStart });
-        router.push(`/thank-you/${data.booking.id}`);
-      } catch (error) {
-        savingRef.current = false;
-        setSubmitting(false);
-        setFormError(error.message);
-      }
-    }
-
-    window.addEventListener("message", onScheduled);
-    return () => {
-      window.removeEventListener("message", onScheduled);
-      if (existing) existing.removeEventListener("load", mount);
-    };
-  }, [stage, router]);
+    stage === "details"
+      ? "Add your details so your specialist can prepare."
+      : path
+        ? `Question ${step + 1} of ${QUESTIONS.length}. ${question?.text || ""}`
+        : "Choose which sounds more like your child.";
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -198,6 +127,11 @@ export function Booking() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "We couldn’t save that booking.");
     leadRef.current = data.booking;
+    try {
+      sessionStorage.setItem(`senyara-lead:${data.booking.id}`, JSON.stringify(data.booking));
+    } catch {
+      /* The thank-you page can still load the booking from the server. */
+    }
     return data;
   }
 
@@ -217,8 +151,8 @@ export function Booking() {
     setSubmitting(true);
     setFormError("");
     try {
-      await persistLead({ slotId: "pending" });
-      setStage("time");
+      const data = await persistLead({ slotId: "pending" });
+      router.push(`/thank-you/${data.booking.id}`);
     } catch (error) {
       setFormError(error.message);
     } finally {
@@ -244,7 +178,6 @@ export function Booking() {
           {[
             ["1", "About your child", stage === "quiz"],
             ["2", "Your details", stage === "details"],
-            ["3", "Pick a time", stage === "time"],
           ].map(([n, label, on]) => (
             <span key={n} className={on ? "stepper-item is-on" : "stepper-item"}>
               {n} · {label}
@@ -394,7 +327,7 @@ export function Booking() {
                 </p>
               )}
               <button type="submit" className="btn btn-green btn-cta" disabled={submitting}>
-                {submitting ? "Saving your details…" : "Continue to pick a time →"}
+                {submitting ? "Submitting…" : "Submit"}
               </button>
               <button type="button" className="text-btn back" onClick={changeAnswers}>
                 ← Change my answers
@@ -402,32 +335,6 @@ export function Booking() {
             </form>
           )}
 
-          {stage === "time" && (
-            <div className="stack">
-              {priority && (
-                <div className="priority">
-                  <strong>Priority family:</strong> you’d like to start soon, so we’ll keep an eye on your booking and reach out today.
-                </div>
-              )}
-              <h3 className="serif">Pick a time for your Free Online Clarity Session</h3>
-              <p className="quiet">
-                {skipped
-                  ? "You can share more about your child during the session."
-                  : "Your answers are attached, so your specialist will be ready."}{" "}
-                Choose a 30-minute time below.
-              </p>
-              <div id="calendly-embed" className="calendly-embed" />
-              {submitting && <p className="quiet">Saving your booking…</p>}
-              {formError && (
-                <p className="form-error" role="alert">
-                  {formError}
-                </p>
-              )}
-              <button type="button" className="text-btn back" onClick={() => setStage("details")}>
-                ← Edit my details
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </section>

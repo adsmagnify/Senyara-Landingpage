@@ -65,8 +65,19 @@ function Hero() {
   const play = () => {
     const video = videoRef.current;
     if (!video) return;
+    if (!video.getAttribute("src")) {
+      video.src = "/Senyara-VSL-16x9-preview-720p....mp4";
+      video.addEventListener(
+        "loadeddata",
+        () => {
+          video.play().catch(() => setPlaying(false));
+        },
+        { once: true },
+      );
+    } else {
+      video.play().catch(() => setPlaying(false));
+    }
     setPlaying(true);
-    video.play().catch(() => setPlaying(false));
   };
 
   return (
@@ -85,11 +96,10 @@ function Hero() {
             <video
               ref={videoRef}
               className="vsl"
-              src="/Senyara-VSL-16x9-preview-720p....mp4"
               poster="/hero.jpg"
               controls={playing}
               playsInline
-              preload="metadata"
+              preload="none"
               onPlay={() => setPlaying(true)}
             />
             {!playing && (
