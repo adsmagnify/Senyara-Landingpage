@@ -26,6 +26,7 @@ export function Booking() {
   const [submitting, setSubmitting] = useState(false);
   const detailsRef = useRef(form);
   const savingRef = useRef(false);
+  const leadRef = useRef(null);
   const router = useRouter();
   detailsRef.current = { form, path, skipped, picks };
 
@@ -85,8 +86,6 @@ export function Booking() {
       savingRef.current = true;
       setSubmitting(true);
       setFormError("");
-      const current = detailsRef.current;
-      const answers = buildInsight(current.picks);
       const payload = event.data?.payload || {};
       const scheduled = payload.event;
       const calendlyEvent = typeof scheduled === "string" ? scheduled : scheduled?.uri || "";
@@ -95,29 +94,7 @@ export function Booking() {
         payload.start_time ||
         "";
       try {
-        const response = await fetch("/api/bookings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: current.form.name,
-            phone: current.form.phone,
-            age: current.form.age,
-            area: current.form.area,
-            start: current.form.start,
-            consent: current.form.consent,
-            path: current.path,
-            skipped: current.skipped,
-            picks: current.picks.map((pick) => ({ question: pick.question, answer: pick.label })),
-            summary: answers.summaryLine,
-            mirror: answers.mirror,
-            resultKey: answers.result.key,
-            slotId: "calendly",
-            calendlyEvent,
-            calendlyStart,
-          }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "We couldn’t save that booking.");
+        const data = await persistLead({ slotId: "calendly", calendlyEvent, calendlyStart });
         router.push(`/thank-you/${data.booking.id}`);
       } catch (error) {
         savingRef.current = false;
@@ -190,7 +167,41 @@ export function Booking() {
     setStage("quiz");
   }
 
-  function onDetails(event) {
+  function leadBody(extra) {
+    const current = detailsRef.current;
+    const answers = buildInsight(current.picks);
+    return {
+      name: current.form.name,
+      phone: current.form.phone,
+      age: current.form.age,
+      area: current.form.area,
+      start: current.form.start,
+      consent: current.form.consent,
+      path: current.path,
+      skipped: current.skipped,
+      picks: current.picks.map((pick) => ({ question: pick.question, answer: pick.label })),
+      summary: answers.summaryLine,
+      mirror: answers.mirror,
+      resultKey: answers.result.key,
+      createdAt: leadRef.current?.createdAt,
+      ...extra,
+    };
+  }
+
+  async function persistLead(extra) {
+    const id = leadRef.current?.id;
+    const response = await fetch(id ? `/api/bookings/${id}` : "/api/bookings", {
+      method: id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(leadBody(extra)),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "We couldn’t save that booking.");
+    leadRef.current = data.booking;
+    return data;
+  }
+
+  async function onDetails(event) {
     event.preventDefault();
     const digits = form.phone.replace(/\D/g, "");
     if (form.name.trim().length < 2 || digits.length < 7) {
@@ -201,8 +212,19 @@ export function Booking() {
       setFormError("Please agree to be contacted about your free session.");
       return;
     }
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSubmitting(true);
     setFormError("");
-    setStage("time");
+    try {
+      await persistLead({ slotId: "pending" });
+      setStage("time");
+    } catch (error) {
+      setFormError(error.message);
+    } finally {
+      savingRef.current = false;
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -371,8 +393,8 @@ export function Booking() {
                   {formError}
                 </p>
               )}
-              <button type="submit" className="btn btn-green btn-cta">
-                Continue to pick a time →
+              <button type="submit" className="btn btn-green btn-cta" disabled={submitting}>
+                {submitting ? "Saving your details…" : "Continue to pick a time →"}
               </button>
               <button type="button" className="text-btn back" onClick={changeAnswers}>
                 ← Change my answers

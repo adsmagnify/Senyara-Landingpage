@@ -46,7 +46,11 @@ function doPost(e) {
     try {
       const sheet = ensureSheet_();
       const reference = String(body.lead[1]);
-      if (findRow_(sheet, reference)) return { ok: true, added: 0 };
+      const existing = findRow_(sheet, reference);
+      if (existing) {
+        updateLead_(sheet, existing, body.lead);
+        return { ok: true, added: 0, updated: 1, reference: reference };
+      }
       appendLead_(sheet, body.lead);
       return { ok: true, added: 1, reference: reference };
     } finally {
@@ -154,5 +158,27 @@ function appendLead_(sheet, lead) {
   }
   if (!String(sheet.getRange(row, 3).getValue() || "").trim()) {
     sheet.getRange(row, 3).setValue("New");
+  }
+}
+
+function updateLead_(sheet, row, lead) {
+  const current = sheet.getRange(row, 1, 1, HEADERS.length).getValues()[0];
+  const values = HEADERS.map(function (_, index) {
+    if (index === 2 || index === 16) return current[index];
+    const incoming = lead[index];
+    if (incoming == null || incoming === "") return current[index];
+    return incoming;
+  });
+  const session = 14;
+  if (String(current[session] || "") && String(current[session]) !== "Not booked yet" && String(values[session]) === "Not booked yet") {
+    values[session] = current[session];
+    values[15] = current[15];
+  }
+  sheet.getRange(row, 1, 1, HEADERS.length).setValues([values]).setVerticalAlignment("top").setWrap(true);
+  const phone = String(values[4] || "");
+  const digits = phone.replace(/\D/g, "");
+  if (digits) {
+    const safe = phone.replace(/"/g, "");
+    sheet.getRange(row, 5).setFormula('=HYPERLINK("https://wa.me/' + digits + '","' + safe + '")');
   }
 }
