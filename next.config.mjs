@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ["nodemailer", "exceljs"],
+  serverExternalPackages: ["nodemailer"],
 };
 
 export default nextConfig;
