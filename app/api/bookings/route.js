@@ -3,6 +3,7 @@ import { BookingError, createBooking } from "../../../lib/bookings.js";
 import { notifyOffice } from "../../../lib/mail.js";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function POST(request) {
   let body;
